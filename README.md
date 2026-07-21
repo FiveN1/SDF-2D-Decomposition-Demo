@@ -1,4 +1,4 @@
-# SDF-2D-Decomposition-Demo
+# SDF 2D Decomposition Demo
 
 ![img](res/comparison.png)
 
