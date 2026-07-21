@@ -1,2 +1,6 @@
 # SDF-2D-Decomposition-Demo
-SDF Decomposition demo in 2D
+
+![img](res/comparison.png)
+
+2D SDF Decomposition implementation.
+
