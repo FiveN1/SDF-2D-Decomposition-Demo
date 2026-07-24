@@ -10,4 +10,8 @@
 - Vecmath
 - [ImGui](https://github.com/ocornut/imgui)
 
+To include these libraries from your own library directory, cheange the include directory in the `premake5.lua` folder.
+Note that ImGui is wrapped by the [cimgui](https://github.com/cimgui/cimgui) wrapper and statically linked.
+
+
 pssst this is secret for now!
