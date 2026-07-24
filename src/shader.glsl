@@ -31,7 +31,7 @@ void main() {
 struct sdf_shape {
     vec2 position;
     float angle;
-    int type;
+    int shape_type;
     vec2 size;
     int _pad0;
     int _pad1;
@@ -122,13 +122,23 @@ float de_horseshoe(in vec2 p, in vec2 c, in float r, in vec2 w) {
 }
 
 //
+// SMOOTHING
+//
+
+float smin(float a, float b, float k) {
+    k *= 1.0 / (1.0 - sqrt(0.5));
+    float h = max(k - abs(a - b), 0.0) / k;
+    return min(a, b) - k * 0.5 * (1.0 + h - sqrt(1.0 - h * (h - 2.0)));
+}
+
+//
 // SDF 
 //
 
 float sdf_get_shape_dist(in vec2 p, in sdf_shape shape) {
     p = sdf_transform(p, shape.position, shape.angle);
     float d = 256.0f;
-    switch (shape.type) {
+    switch (shape.shape_type) {
     case 0:
         break;
     case 1:
@@ -168,64 +178,6 @@ float de_scene(in vec2 p) {
     return max(d, -d_decomposed);
 }
 
-
-/*
-float smin(float a, float b, float k) {
-    k *= 1.0;
-    float r = exp2(-a / k) + exp2(-b / k);
-    return -k * log2(r);
-}
-*/
-
-
-// circular
-
-/*
-float smin(float a, float b, float k)
-{
-    k *= 1.0 / (1.0 - sqrt(0.5));
-    float h = max(k - abs(a - b), 0.0) / k;
-    return min(a, b) - k * 0.5 * (1.0 + h - sqrt(1.0 - h * (h - 2.0)));
-}
-
-
-float opXor(float a, float b)
-{
-    return max(min(a, b), -max(a, b));
-}
-*/
-
-/*
-float de_scene(in vec2 p) {
-
-    
-    if (1 + original_shape_sdf_count + decomposition_sdf_count > shapes_count) return 0.0f; // overflow
-
-    float d0 = 128.0f;
-    for (int i = 1; i < 1 + original_shape_sdf_count; i++) {
-        vec2 trans_p = rotate_sdf((p * cam_zoom - shapes[i].position - cam_position), shapes[i].angle);
-        float ds = de_shape(trans_p, i);
-        d0 = min(d0, ds);
-    }
-    float d1 = 128.0f;
-    for (int i = 1 + original_shape_sdf_count; i < 1 + original_shape_sdf_count + decomposition_sdf_count; i++) {
-        vec2 trans_p = rotate_sdf((p * cam_zoom - shapes[i].position - cam_position), shapes[i].angle);
-        float ds = de_shape(trans_p, i);
-        d1 = min(d1, ds);
-        //float s = 1.0f / (float(decomposition_sdf_count) * 6.0f);
-        //d1 = smin(d1, ds, s);
-    }
-
-    //float d = max(d0, -d1); // d1 is negative
-    float d = opXor(d0, d1);
-    //float d = d1;
-    
-
-    return 0.0f; // d1 is negative
-}
-*/
-
-
 //
 // SHADING
 //
@@ -236,44 +188,6 @@ vec3 hex_to_rgb(int hex_value) {
     color.g = ((hex_value >> 8) & 0xFF) / 255.0;   // Extract the GG byte
     color.b = ((hex_value) & 0xFF) / 255.0;        // Extract the BB byte
     return color;
-}
-
-vec3 linear_color_gradient(float gradient_position) {
-
-    // managua
-    vec3 color_spectrum[10] = {
-        hex_to_rgb(0xffcf67),
-        hex_to_rgb(0xdd9954),
-        hex_to_rgb(0xba6b44),
-        hex_to_rgb(0x93453b),
-        hex_to_rgb(0x68293c),
-        hex_to_rgb(0x4f315d),
-        hex_to_rgb(0x505693),
-        hex_to_rgb(0x5d7fbd),
-        hex_to_rgb(0x6fb0de),
-        hex_to_rgb(0x91d8f0)
-    };
-    vec3 color_spectrum_[10] = {
-        hex_to_rgb(0x65144b),
-        hex_to_rgb(0xa03b85),
-        hex_to_rgb(0xc76fac),
-        hex_to_rgb(0xe3aed0),
-        hex_to_rgb(0xf5e3ed),
-        hex_to_rgb(0xf0f2e3),
-        hex_to_rgb(0xc3daa0),
-        hex_to_rgb(0x7ea854),
-        hex_to_rgb(0x467a39),
-        hex_to_rgb(0x244b23)
-    };
-    int color_count = 10;
-    int color_segments = (color_count - 1);
-    float segment_distance = 1.0f / color_segments;
-    int base_segment = int(floor(gradient_position * color_segments));
-    int next_segment = base_segment + 1;
-    float base_position = float(base_segment) * segment_distance;
-    float next_weight = (float(gradient_position) - base_position) * color_segments;
-    float base_weight = 1.0f - next_weight;
-    return color_spectrum[base_segment] * base_weight + color_spectrum[next_segment] * next_weight;
 }
 
 float get_shadow(float d, float shadow_max, float shadow_opacity) {
@@ -287,7 +201,7 @@ void main() {
     float iso = 0.001f;
     float lind = (clamp(sqrt(abs(d)) * sign(d) + sin(d * 512.0f) * 0.1f, -1.0f, 1.0f) + 1.0f) / 2.0f;
     if (d > iso || d < -iso) {
-        color = linear_color_gradient(lind);
+        //color = linear_color_gradient(lind);
         float wave = 1.0f - (sin(d * 512.0f) + 1.0f) * 0.5f * 0.2f;
         float shadow = get_shadow(d, 0.05f, 0.5f);
         if (d > iso) {

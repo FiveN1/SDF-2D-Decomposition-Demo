@@ -1,5 +1,5 @@
 
-#define MAX_SDF_PRIMITIVES 256
+#define MAX_SDF_SHAPES 256
 
 typedef enum sdf_shape_type {
     SDF_TYPE_NONE = 0,
@@ -22,13 +22,13 @@ typedef struct sdf_shape {
 } sdf_shape;
 
 typedef struct sdf_buffer { // arena-like buffer
-    sdf_shape buffer[MAX_SDF_PRIMITIVES + 1]; // +1 for invalid shape at the very end of buffer, i.e at MAX_SDF_PRIMITIVES
+    sdf_shape buffer[MAX_SDF_SHAPES + 1]; // +1 for invalid shape at the very end of buffer, i.e at MAX_SDF_SHAPES
     uint16_t free_index;
 } sdf_buffer;
 
 sdf_shape_id sdf_add_shape(sdf_buffer* buffer, sdf_shape* shape) {
-    sdf_shape_id id = { .id = MAX_SDF_PRIMITIVES }; // initilize with invalid value
-    if (buffer->free_index >= MAX_SDF_PRIMITIVES) {
+    sdf_shape_id id = { .id = MAX_SDF_SHAPES }; // initilize with invalid value
+    if (buffer->free_index >= MAX_SDF_SHAPES) {
         printf("sdf_add_shape(): SDF buffer full!\n"); // error log
         return id;
     }
@@ -49,7 +49,7 @@ void sdf_pop_shape(sdf_buffer* buffer) {
 }
 
 sdf_shape* sdf_get_shape(sdf_buffer* buffer, sdf_shape_id id) {
-    if (id.id > buffer->free_index) return &buffer->buffer[MAX_SDF_PRIMITIVES];
+    if (id.id > buffer->free_index) return &buffer->buffer[MAX_SDF_SHAPES];
     return &buffer->buffer[id.id];
 }
 
@@ -159,17 +159,10 @@ float sdf_get_scene_dist(sdf_buffer* buffer, vec2_t p) {
 // DECOMPOSITION
 //
 
-typedef enum gradient_descent_type {
-    SGD = 0,
-    GD_MOMENTUM,
-    NELDER_MEAD
-} gradient_descent_type;
-
 typedef struct sdf_decomp_desc {
     int iteration_count;
     int grid_resolution;
     float grid_size;
-    int gradient_descent_method;
 } sdf_decomp_desc;
 
 static struct sdf_decomposition_state {
@@ -265,20 +258,16 @@ void sdf_decompose(sdf_decomp_desc* desc) {
 }
 
 void sdf_decompose_step(sdf_decomp_desc* desc) {
-
-    if (!sdf_decomposition_state.running) {
-        return;
-    }
-
-    if (sdf_decomposition_state.decomposed_buffer->free_index >= desc->iteration_count) {
-        sdf_decomposition_state.running = false; // reached end
+    // check if reached end or not running
+    if (sdf_decomposition_state.decomposed_buffer->free_index >= desc->iteration_count || !sdf_decomposition_state.running) {
+        sdf_decomposition_state.running = false;
         return;
     }
 
     static float time = 0.0f;
     time += (float)sapp_frame_duration();
 
-    if (time > 0.12f) {
+    if (time > 0.125f) {
         // get lowest point in SDF
         vec3_t global_minimum = sdf_get_global_minimum(desc->grid_resolution, desc->grid_size);
         // add n-sphere
@@ -287,6 +276,8 @@ void sdf_decompose_step(sdf_decomp_desc* desc) {
             .position = vec3_xy(global_minimum),
             .size = vec2f(vecmath_abs(global_minimum.z))
         });
+
+        time = 0.0f;
     }
 }
 

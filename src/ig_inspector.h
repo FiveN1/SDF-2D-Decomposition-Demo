@@ -29,10 +29,11 @@ static void ig_inspector_draw() {
 
     sdf_decomp_desc* desc = &app_data.decomp_description;
     
+    igSliderInt("Iteration count", &desc->iteration_count, 1, 64, NULL, 0);
+
+    igText("Grid:");
     igSliderInt("Grid resolution", &desc->grid_resolution, 2, 64, NULL, 0);
     igSliderFloat("Grid size", &desc->grid_size, 0.0f, 2.0f, NULL, 0);
-
-    igSliderInt("Iteration count", &desc->iteration_count, 2, 64, NULL, 0);
 
     if (igButton("Run decomposition", (ImVec2_c) { 0 })) {
         app_data.decomposed_sdf.free_index = 0;
@@ -79,7 +80,7 @@ static void ig_inspector_draw() {
                 "SDF_TYPE_STAR",
                 "SDF_TYPE_HORSESHOE"
             };
-            igCombo_Str_arr("shape type", &shape->type, items, _SDF_TYPE_COUNT, _SDF_TYPE_COUNT);
+            igCombo_Str_arr("shape type", (int*)&shape->type, items, _SDF_TYPE_COUNT, _SDF_TYPE_COUNT);
             
             igTreePop();
         }
@@ -92,8 +93,6 @@ static void ig_inspector_draw() {
     if (igButton("Pop sdf_shape", (ImVec2_c) { 0 })) {
         sdf_pop_shape(shape_buff);
     }
-
-
 
     igEnd();
 }

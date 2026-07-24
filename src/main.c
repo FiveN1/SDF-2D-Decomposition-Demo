@@ -43,6 +43,7 @@ static struct app_data {
 
     // decomposition description
     sdf_decomp_desc decomp_description;
+
 } app_data;
 
 #include"ig_inspector.h"
@@ -71,15 +72,15 @@ void init() {
     app_data.original_sdf_ssbo = sg_make_buffer(&(sg_buffer_desc) {
         .usage.storage_buffer = true,
         .usage.stream_update = true,
-        .size = sizeof(sdf_shape_t) * (MAX_SDF_PRIMITIVES + 1)
+        .size = sizeof(sdf_shape_t) * (MAX_SDF_SHAPES + 1)
     });
     app_data.bindings.views[VIEW_original_sdf_buffer] = sg_make_view(&(sg_view_desc) {
         .storage_buffer = { .buffer = app_data.original_sdf_ssbo },
     });
     app_data.decomposed_sdf_ssbo = sg_make_buffer(&(sg_buffer_desc) {
         .usage.storage_buffer = true,
-        .usage.stream_update = true,
-        .size = sizeof(sdf_shape_t) * (MAX_SDF_PRIMITIVES + 1)
+            .usage.stream_update = true,
+            .size = sizeof(sdf_shape_t) * (MAX_SDF_SHAPES + 1)
     });
     app_data.bindings.views[VIEW_decomposed_sdf_buffer] = sg_make_view(&(sg_view_desc) {
         .storage_buffer = { .buffer = app_data.decomposed_sdf_ssbo },
@@ -123,6 +124,9 @@ void init() {
         .grid_resolution = 16,
         .grid_size = 0.5f
     };
+
+    //sdf_decompose(&app_data.decomp_description); // in this demo we're doing decomposition while running unsing: sdf_decompose_step()
+
 }
 
 void delete() {
